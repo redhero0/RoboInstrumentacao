@@ -33,6 +33,8 @@ void loop() {
     
     Serial.print("RPM: ");
     Serial.println(rpm);
+    Serial.print("Contador: ");
+    Serial.println(contador);
     
     // Reseta o contador
     contador = 0;

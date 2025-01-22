@@ -15,7 +15,7 @@
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-#define DHTPIN 2     // Digital pin connected to the DHT sensor
+#define DHTPIN A1     // Digital pin connected to the DHT sensor
 
 // Uncomment the type of sensor in use:
 #define DHTTYPE    DHT11     // DHT 11

@@ -6,13 +6,14 @@
 Adafruit_MPU6050 mpu;
 
 void setup(void) {
-	Serial.begin(115200);
+	Serial.begin(9600);
 
 	// Try to initialize!
 	if (!mpu.begin()) {
 		Serial.println("Failed to find MPU6050 chip");
 		while (1) {
-		  delay(10);
+			Serial.println("Failed to find MPU6050 chip");
+		  	delay(100);
 		}
 	}
 	Serial.println("MPU6050 Found!");

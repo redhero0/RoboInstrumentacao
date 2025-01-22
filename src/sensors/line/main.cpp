@@ -2,6 +2,7 @@
 int pinoSensor = 8; 
    
 void setup(){  
+  Serial.begin(9600);
   pinMode(pinoSensor, INPUT); 
 }  
    

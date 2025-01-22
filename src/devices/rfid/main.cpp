@@ -11,6 +11,7 @@ void setup() {
   Serial.begin(9600); //INICIALIZA A SERIAL
   SPI.begin(); //INICIALIZA O BARRAMENTO SPI
   rfid.PCD_Init(); //INICIALIZA MFRC522
+  Serial.println("Init complete!");
 }
  
 void loop() {
