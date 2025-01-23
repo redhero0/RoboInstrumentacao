@@ -57,13 +57,22 @@ void loop() {
     Serial.print(currentAngle);
     Serial.println(" graus");
 
-    // Pausa o motor enquanto o objeto estiver na distância limite
-    Serial.println("Pausando motor...");
-    while (distance > 0 && distance < distanceThreshold) {
-      distance = ultrasonic.read(CM); // Continua monitorando a distância
-      delay(50);                      // Pequena pausa para leituras estáveis
+    // Move o motor de volta para a posição inicial (0°)
+    Serial.println("Objeto detectado. Retornando à posição inicial...");
+    while (stepperPosition != 0) {
+      // Se o motor estiver em um ângulo maior que 0°, move-o para a esquerda
+      if (stepperPosition > 0) {
+        myStepper.step(-1); // Movimento anti-horário (de volta para 0°)
+        stepperPosition--;  // Atualiza a posição
+      }
+      // Se o motor estiver em um ângulo menor que 0°, move-o para a direita
+      else if (stepperPosition < 0) {
+        myStepper.step(1);  // Movimento horário (de volta para 0°)
+        stepperPosition++;  // Atualiza a posição
+      }
+      delay(2); // Pequena pausa para garantir leituras estáveis
     }
-    Serial.println("Objeto não detectado. Retomando varredura...");
+    Serial.println("Posição inicial (0°) alcançada.");
   }
 
   // Move o motor 1 passo na direção atual
