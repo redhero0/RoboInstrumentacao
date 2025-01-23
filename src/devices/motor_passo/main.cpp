@@ -19,31 +19,35 @@ void setup() {
 void loop() {
     // Rotate CW slowly at 5 RPM
     myStepper.setSpeed(5);
-    myStepper.step(stepsPerRevolution);
+    myStepper.step(stepsPerRevolution); // One full revolution
     stepperPosition += stepsPerRevolution; // Update position counter
 
-    // Check if position exceeds one full revolution and reset
-    if (abs(stepperPosition) >= stepsPerRevolution) {
-        stepperPosition = 0; // Reset position
-        Serial.println("One full rotation completed. Position reset to 0.");
-    }
-
+    // Calculate angle (mapping steps to degrees)
+    float angle = (float(stepperPosition % stepsPerRevolution) / stepsPerRevolution) * 360;
     Serial.print("Current Position (CW): ");
-    Serial.println(stepperPosition);
+    Serial.print(stepperPosition);
+    Serial.print(" steps, Angle: ");
+    Serial.print(angle);
+    Serial.println("°");
     delay(1000);
 
     // Rotate CCW quickly at 10 RPM
     myStepper.setSpeed(10);
-    myStepper.step(-stepsPerRevolution);
+    myStepper.step(-stepsPerRevolution); // One full revolution CCW
     stepperPosition -= stepsPerRevolution; // Update position counter
 
-    // Check if position exceeds one full revolution and reset
-    if (abs(stepperPosition) >= stepsPerRevolution) {
-        stepperPosition = 0; // Reset position
-        Serial.println("One full rotation completed. Position reset to 0.");
+    // Calculate angle (mapping steps to degrees)
+    angle = (float(stepperPosition % stepsPerRevolution) / stepsPerRevolution) * 360;
+
+    // Handle negative positions to keep the angle between 0 and 360 degrees
+    if (angle < 0) {
+        angle += 360;
     }
 
     Serial.print("Current Position (CCW): ");
-    Serial.println(stepperPosition);
+    Serial.print(stepperPosition);
+    Serial.print(" steps, Angle: ");
+    Serial.print(angle);
+    Serial.println("°");
     delay(1000);
 }

@@ -14,7 +14,8 @@ float targetAngle = 0;  // Ângulo desejado para alinhar com o objeto
 // Configuração dos motores de passo
 const int stepsPerRevolution = 2038;  // Número de passos por revolução (ajustar conforme o motor)
 Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);  // Pinos do motor de passo
-int stepperPosition = 0; // Contador de passos do motor de passo
+int stepperPosition = 0;  // Contador de passos do motor de passo
+int stepDirection = 1;    // Direção do motor (1 para horário, -1 para anti-horário)
 
 // Configuração do motor DC (para movimento do robô)
 AF_DCMotor leftMotor(3);
@@ -122,8 +123,8 @@ void setup() {
   leftMotor.setSpeed(150);  // Velocidade inicial dos motores
   rightMotor.setSpeed(150);
 
-  // Configura o motor de passo
-  myStepper.setSpeed(10);  // Velocidade do motor de passo (ajuste conforme necessário)
+  // Configura o motor de passo com velocidade aumentada
+  myStepper.setSpeed(40);  // Velocidade do motor de passo (ajuste 4x maior)
 }
 
 void loop() {
@@ -132,25 +133,25 @@ void loop() {
 
   // Gira o motor de passo enquanto não detectar um objeto dentro da distância especificada
   while (distance > distanceThreshold) {
-    myStepper.step(1);  // Move o motor de passo em 1 passo por vez
-    stepperPosition++;  // Incrementa o contador de passos
+    myStepper.step(stepDirection);  // Move o motor de passo em 1 passo na direção atual
+    stepperPosition += stepDirection;  // Atualiza o contador de passos
+
+    // Restringe o movimento entre -90° e +90°
+    float angle = calculateAngle(stepperPosition);
+    if (angle > 90 || angle < -90) {
+      stepDirection *= -1;  // Inverte a direção
+      stepperPosition += stepDirection;  // Ajusta a posição
+    }
 
     // Atualiza a distância do sensor ultrassônico
     distance = ultrasonic.read(CM);
 
-    // Garante que o contador não ultrapasse os limites de uma volta completa
-    if (stepperPosition >= stepsPerRevolution) {
-      stepperPosition = 0; // Zera ao completar uma volta
-    } else if (stepperPosition < 0) {
-      stepperPosition = stepsPerRevolution - 1; // Ajusta para evitar valores negativos
-    }
-
     Serial.print("Distância: ");
     Serial.print(distance);
-    Serial.print(" cm | Posição do motor de passo: ");
-    Serial.println(stepperPosition);
+    Serial.print(" cm | Ângulo: ");
+    Serial.println(calculateAngle(stepperPosition));
 
-    delay(10);  // Pequeno atraso para leitura estável
+    delay(5);  // Pequeno atraso para leitura estável
   }
 
   // Após detectar um objeto, calcular o ângulo com base na posição do motor de passo
@@ -162,5 +163,3 @@ void loop() {
   // Após o alinhamento, mover os motores DC para ir em direção ao objeto
   moveTowardsObject();
 }
-
-

@@ -22,7 +22,7 @@ Ultrasonic ultrasonic(TRIG, ECHO);
 
 void setup(){
 
-    Serial.begin(115200); 
+    Serial.begin(9600); 
 
 }
 
