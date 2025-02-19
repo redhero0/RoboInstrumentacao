@@ -7,7 +7,7 @@ void setup(){
 }  
    
 void loop(){
-  if (digitalRead(pinoSensor) == LOW)
+  if ((pinoSensor) == LOW)
     Serial.println("LOW");
   else
     Serial.println("HIGH");

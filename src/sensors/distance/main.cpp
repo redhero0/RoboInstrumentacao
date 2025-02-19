@@ -1,8 +1,7 @@
-#include <Ultrasonic.h>
 #include <Arduino.h>
-
-#define ECHO 13
-#define TRIG 12
+#include <Ultrasonic.h>
+#define ECHO A2
+#define TRIG A1
 
 /*
 ------------------  

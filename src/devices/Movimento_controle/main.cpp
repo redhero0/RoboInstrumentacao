@@ -8,9 +8,6 @@
 #define TRIG A1
 #define ECHO A2
 
-#define LEFT_SPEED 100
-#define RIGHT_SPEED 100 
-
 /*
 ------------------  
 |  HC-SR04 (1)   |   
@@ -57,7 +54,7 @@ void setup() {
   digitalWrite(PIN_LED, LOW);
   //Set initial speed of the motor & stop
 	left_motor.setSpeed(80);
-	right_motor.setSpeed(RIGHT_SPEED);
+	right_motor.setSpeed(80);
 	left_motor.run(RELEASE);
 	right_motor.run(RELEASE);
   dht.begin();
@@ -99,29 +96,29 @@ void turnOffLed() {
 void goForward()
 {
   left_motor.setSpeed(80);
-	right_motor.setSpeed(RIGHT_SPEED);
+	right_motor.setSpeed(80);
   left_motor.run(FORWARD);
   right_motor.run(FORWARD);
 }
 
 void turnLeft() {
 
-	right_motor.setSpeed(70);
+	right_motor.setSpeed(80);
   left_motor.run(RELEASE);
   right_motor.run(FORWARD);
 
 }
 
 void goBack() {
-  left_motor.setSpeed(LEFT_SPEED);
-	right_motor.setSpeed(RIGHT_SPEED);
+  left_motor.setSpeed(80);
+	right_motor.setSpeed(80);
   left_motor.run(BACKWARD);
   right_motor.run(BACKWARD);
 }
 
 void turnRight() {
 
-  left_motor.setSpeed(70);
+  left_motor.setSpeed(80);
   left_motor.run(FORWARD);
   right_motor.run(RELEASE);
 
