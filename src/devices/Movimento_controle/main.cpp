@@ -8,6 +8,11 @@
 #define TRIG A1
 #define ECHO A2
 
+#define FRONT_LEFT_SPEED 85
+#define FRONT_RIGHT_SPEED 80 
+#define TURN_LEFT_SPEED 70
+#define TURN_RIGHT_SPEED 70 
+
 /*
 ------------------  
 |  HC-SR04 (1)   |   
@@ -54,7 +59,7 @@ void setup() {
   digitalWrite(PIN_LED, LOW);
   //Set initial speed of the motor & stop
 	left_motor.setSpeed(80);
-	right_motor.setSpeed(80);
+	right_motor.setSpeed(FRONT_RIGHT_SPEED);
 	left_motor.run(RELEASE);
 	right_motor.run(RELEASE);
   dht.begin();
@@ -95,32 +100,33 @@ void turnOffLed() {
 
 void goForward()
 {
-  left_motor.setSpeed(80);
-	right_motor.setSpeed(80);
+  left_motor.setSpeed(FRONT_LEFT_SPEED);
+	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(FORWARD);
   right_motor.run(FORWARD);
 }
 
 void turnLeft() {
-
-	right_motor.setSpeed(80);
-  left_motor.run(RELEASE);
+  left_motor.setSpeed(TURN_LEFT_SPEED);
+	right_motor.setSpeed(TURN_RIGHT_SPEED);
+  left_motor.run(BACKWARD);
   right_motor.run(FORWARD);
 
 }
 
 void goBack() {
-  left_motor.setSpeed(80);
-	right_motor.setSpeed(80);
+  left_motor.setSpeed(FRONT_LEFT_SPEED);
+	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(BACKWARD);
   right_motor.run(BACKWARD);
 }
 
 void turnRight() {
 
-  left_motor.setSpeed(80);
+  left_motor.setSpeed(TURN_LEFT_SPEED);
+	right_motor.setSpeed(TURN_RIGHT_SPEED);
   left_motor.run(FORWARD);
-  right_motor.run(RELEASE);
+  right_motor.run(BACKWARD);
 
 }
 

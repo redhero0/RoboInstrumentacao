@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Ultrasonic.h>
-#define ECHO 7
-#define TRIG 6
+#define ECHO 2
+#define TRIG 3
 /*
 ------------------  
 |  HC-SR04 (1)   |   
