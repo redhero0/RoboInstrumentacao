@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #include <Ultrasonic.h>
-#define ECHO A2
-#define TRIG A1
-
+#define ECHO 7
+#define TRIG 6
 /*
 ------------------  
 |  HC-SR04 (1)   |   
@@ -28,4 +27,5 @@ void setup(){
 void loop(){
     Serial.print("Sensor: ");
     Serial.println(ultrasonic.read(CM));
+    delay(50);
 }

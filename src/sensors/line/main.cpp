@@ -1,5 +1,5 @@
 #include <Arduino.h>
-int pinoSensor = 8; 
+int pinoSensor = A1; 
    
 void setup(){  
   Serial.begin(9600);
@@ -7,8 +7,9 @@ void setup(){
 }  
    
 void loop(){
-  if ((pinoSensor) == LOW)
-    Serial.println("LOW");
-  else
-    Serial.println("HIGH");
+  Serial.println(analogRead(pinoSensor));
+  if(analogRead(pinoSensor) > 680)
+  {
+    Serial.println("PRETO!");
+  }
 }
