@@ -212,7 +212,8 @@ void autonomousMode()
 {
   unsigned int ultrassom_read = ultrasonic.read(CM);
 
-    if (ultrassom_read < 45 && ultrassom_read > 5) {
+    if (ultrassom_read < 45 && ultrassom_read > 5) 
+    {
         if(last_ultrassom_read >= 45)
         {
             left_motor.setSpeed(MAX_SPEED);
@@ -228,22 +229,28 @@ void autonomousMode()
         isTurning = false;
         turnComplete = false;
         isMovingForward = false;
-    } else if (ultrassom_read <= 5) {
-        left_motor.run(RELEASE);
-        right_motor.run(RELEASE);
-        isTurning = false;
-        isMovingForward = false;
-        isPausing = false;
-    } else {
-        if (!isTurning && !isMovingForward) {
+  } 
+  else if (ultrassom_read <= 5)
+  {
+      left_motor.run(RELEASE);
+      right_motor.run(RELEASE);
+      isTurning = false;
+      isMovingForward = false;
+      isPausing = false;
+  }
+  else {
+        if (!isTurning && !isMovingForward) 
+        {
             isMovingForward = true;
             turnComplete = false;
             isTurning = false;
             previousMillis = millis();
         }
 
-        if (isTurning && !turnComplete) {
-            if (millis() - previousMillis >= turnInterval) {
+        if (isTurning && !turnComplete)
+        {
+            if (millis() - previousMillis >= turnInterval)
+            {
                 isTurning = false;
                 turnComplete = true;
                 isMovingForward = true;
@@ -257,7 +264,8 @@ void autonomousMode()
                 delay(5);
                 previousMillis = millis();
             }
-            else if (millis() - turningMillis >= pauseInterval) {
+            else if (millis() - turningMillis >= pauseInterval)
+            {
                 if (isPausing) {
                     left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
                     left_motor.run(FORWARD);
@@ -273,7 +281,8 @@ void autonomousMode()
             
         }
 
-        if (isMovingForward) {
+        if (isMovingForward) 
+        {
             if (millis() - previousMillis < moveForwardInterval) {
                 left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
                 left_motor.run(FORWARD);
