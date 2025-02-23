@@ -218,86 +218,95 @@ void autonomousMode()
 {
   unsigned int ultrassom_read = ultrasonic.read(CM);
 
-  if (ultrassom_read < 45 && ultrassom_read > 5) {
-      if(last_ultrassom_read >= 45)
-      {
-          left_motor.setSpeed(MAX_SPEED);
-          left_motor.run(FORWARD);
-          right_motor.setSpeed(MAX_SPEED);           
-          right_motor.run(FORWARD);
-          delay(5);
-      }
-      left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
-      left_motor.run(FORWARD);
-      right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
-      right_motor.run(FORWARD);
-      isTurning = false;
-      turnComplete = false;
-      isMovingForward = false;
-  } else if (ultrassom_read <= 5) {
+    if (ultrassom_read < 45 && ultrassom_read > 5) 
+    {
+        if(last_ultrassom_read >= 45)
+        {
+            left_motor.setSpeed(MAX_SPEED);
+            left_motor.run(FORWARD);
+            right_motor.setSpeed(MAX_SPEED);           
+            right_motor.run(FORWARD);
+            delay(5);
+        }
+        left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
+        left_motor.run(FORWARD);
+        right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
+        right_motor.run(FORWARD);
+        isTurning = false;
+        turnComplete = false;
+        isMovingForward = false;
+  } 
+  else if (ultrassom_read <= 5)
+  {
       left_motor.run(RELEASE);
       right_motor.run(RELEASE);
       isTurning = false;
       isMovingForward = false;
       isPausing = false;
-  } else {
-      if (!isTurning && !isMovingForward) {
-          isMovingForward = true;
-          turnComplete = false;
-          isTurning = false;
-          previousMillis = millis();
-      }
-
-      if (isTurning && !turnComplete) {
-          if (millis() - previousMillis >= turnInterval) {
-              isTurning = false;
-              turnComplete = true;
-              isMovingForward = true;
-              left_motor.run(RELEASE);
-              right_motor.run(RELEASE);
-              delay(1000);
-              left_motor.setSpeed(MAX_SPEED);
-              left_motor.run(FORWARD);
-              right_motor.setSpeed(MAX_SPEED);                
-              right_motor.run(FORWARD);
-              delay(5);
-              previousMillis = millis();
-          }
-          else if (millis() - turningMillis >= pauseInterval) {
-              if (isPausing) {
-                  left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
-                  left_motor.run(FORWARD);
-                  right_motor.setSpeed(TURN_RIGHT_SPEED_AUTO);
-                  right_motor.run(BACKWARD);
-              } else {
-                  left_motor.run(RELEASE);
-                  right_motor.run(RELEASE);
-              }
-              isPausing = !isPausing;
-              turningMillis = millis();
-          }
-          
-      }
-
-      if (isMovingForward) {
-          if (millis() - previousMillis < moveForwardInterval) {
-              left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
-              left_motor.run(FORWARD);
-              right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);                
-              right_motor.run(FORWARD);
-          } else {
-              isMovingForward = false;
-              isTurning = true;
-              turnComplete = false;
-              left_motor.run(RELEASE);
-              right_motor.run(RELEASE);
-              delay(1000);
-              previousMillis = millis();
-              turningMillis = millis();
-          }
-      }
   }
-  last_ultrassom_read = ultrassom_read;
+  else {
+        if (!isTurning && !isMovingForward) 
+        {
+            isMovingForward = true;
+            turnComplete = false;
+            isTurning = false;
+            previousMillis = millis();
+        }
+
+        if (isTurning && !turnComplete)
+        {
+            if (millis() - previousMillis >= turnInterval)
+            {
+                isTurning = false;
+                turnComplete = true;
+                isMovingForward = true;
+                left_motor.run(RELEASE);
+                right_motor.run(RELEASE);
+                delay(1000);
+                left_motor.setSpeed(MAX_SPEED);
+                left_motor.run(FORWARD);
+                right_motor.setSpeed(MAX_SPEED);                
+                right_motor.run(FORWARD);
+                delay(5);
+                previousMillis = millis();
+            }
+            else if (millis() - turningMillis >= pauseInterval)
+            {
+                if (isPausing) {
+                    left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
+                    left_motor.run(FORWARD);
+                    right_motor.setSpeed(TURN_RIGHT_SPEED_AUTO);
+                    right_motor.run(BACKWARD);
+                } else {
+                    left_motor.run(RELEASE);
+                    right_motor.run(RELEASE);
+                }
+                isPausing = !isPausing;
+                turningMillis = millis();
+            }
+            
+        }
+
+        if (isMovingForward) 
+        {
+            if (millis() - previousMillis < moveForwardInterval) {
+                left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
+                left_motor.run(FORWARD);
+                right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);                
+                right_motor.run(FORWARD);
+            } else {
+                isMovingForward = false;
+                isTurning = true;
+                turnComplete = false;
+                left_motor.run(RELEASE);
+                right_motor.run(RELEASE);
+                delay(1000);
+                previousMillis = millis();
+                turningMillis = millis();
+            }
+        }
+    }
+    last_ultrassom_read = ultrassom_read;
 }
 
 void manualMode()
