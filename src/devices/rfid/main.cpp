@@ -6,12 +6,15 @@
 #define RST_PIN A2 //PINO DE RESET
  
 MFRC522 rfid(SS_PIN, RST_PIN); //PASSAGEM DE PARÂMETROS REFERENTE AOS PINOS
- 
+int buzzer = 5;
 void setup() {
   Serial.begin(9600); //INICIALIZA A SERIAL
   SPI.begin(); //INICIALIZA O BARRAMENTO SPI
   rfid.PCD_Init(); //INICIALIZA MFRC522
   Serial.println("Init complete!");
+  pinMode (buzzer, OUTPUT) ;
+  digitalWrite (buzzer, HIGH) ;
+
 }
  
 void loop() {
@@ -34,4 +37,9 @@ void loop() {
  
   rfid.PICC_HaltA(); //PARADA DA LEITURA DO CARTÃO
   rfid.PCD_StopCrypto1(); //PARADA DA CRIPTOGRAFIA NO PCD
+
+  digitalWrite (buzzer, LOW) ;
+  delay (500) ;
+  digitalWrite (buzzer, HIGH) ;
+  delay (500) ;
 }
