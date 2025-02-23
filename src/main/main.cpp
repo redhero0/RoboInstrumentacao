@@ -19,13 +19,13 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 
 #define FRONT_LEFT_SPEED 85
 #define FRONT_RIGHT_SPEED 80
-#define TURN_LEFT_SPEED 70
-#define TURN_RIGHT_SPEED 70
+#define TURN_LEFT_SPEED 80
+#define TURN_RIGHT_SPEED 80
 
 #define FRONT_LEFT_SPEED_AUTO 70
 #define FRONT_RIGHT_SPEED_AUTO 70
-#define TURN_LEFT_SPEED_AUTO 80
-#define TURN_RIGHT_SPEED_AUTO 80
+#define TURN_LEFT_SPEED_AUTO 75
+#define TURN_RIGHT_SPEED_AUTO 75
 
 #define MAX_SPEED 255
 
@@ -33,7 +33,7 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 
 #define SS_PIN 10  // PINO SDA
 #define RST_PIN A2 // PINO DE RESET
-#define BUZZER_PIN 5
+#define BUZZER_PIN A0
 //int buzzer = 8;
 
 // Objetos para os sensores
@@ -49,10 +49,13 @@ AF_DCMotor left_motor(4);
 
 char t;
 #define PIN_LED 3
-#define TEMP_SENSOR 2
+
+unsigned long lastRFIDCheck = 0;
+const long RFID_INTERVAL = 500;  // Checar RFID a cada 500ms
 
 bool isAutonomousMode = false; // Indica se está no modo autônomo ou manual
 
+unsigned int last_ultrassom_read = 0;
 unsigned long previousMillis = 0;
 unsigned long turningMillis = 0;
 const long moveForwardInterval = 500;
@@ -64,7 +67,9 @@ bool isMovingForward = false;
 bool isPausing = false;
 bool turnComplete = false;
 
-unsigned int last_ultrassom_read = 0;
+unsigned long displayMillis = 0;
+const long displayInterval = 3000;
+
 
 int tagFlag = 0;
 
@@ -85,7 +90,6 @@ void setup()
 {
 
   pinMode(PIN_LED, OUTPUT);
-  pinMode(TEMP_SENSOR, INPUT);
   digitalWrite(PIN_LED, LOW);
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, HIGH);
@@ -112,60 +116,56 @@ void setup()
 
 void loop()
 {
-
-  int sensorValue = analogRead(SENSOR_PIN); // Lê o valor do sensor analógico
-  if (sensorValue > 850 && sensorValue < 1010)
-  {
-    // Se estava no modo manual e vai para o modo autônomo
-    if (!isAutonomousMode)
-    {
-      stopMotors();                 // Para os motores antes de mudar para o modo autônomo
-      isMovingForward = false;      // Interrompe qualquer movimento
-      isTurning = false;            // Interrompe qualquer giro
-      isPausing = false;            // Interrompe qualquer pausa 
-      isAutonomousMode = true;      // Ativa o modo autônomo
+  if (!tagFlag) {  // Só lê o sensor se a tag ainda não foi lida
+    int sensorValue = analogRead(SENSOR_PIN);
+    if (sensorValue > 850 && sensorValue < 1010) {
+        if (!isAutonomousMode) {
+            stopMotors();
+            isAutonomousMode = true;
+        }
+    } else {
+        if (isAutonomousMode) {
+            stopMotors();
+            isAutonomousMode = false;
+        }
     }
-  }
-  else
-  {
-    // Se estava no modo autônomo e vai para o modo manual
-    if (isAutonomousMode)
-    {
-      stopMotors();             // Para os motores antes de mudar para o modo manual
-      isAutonomousMode = false; // Ativa o modo manual
-    }
+  } else {
+    // Garante que o modo manual esteja sempre ativado após leitura da tag
+    isAutonomousMode = false;
   }
 
-  if (isAutonomousMode)
-  {
-    // Modo autônomo
-    autonomousMode();
-  }
-  else
-  {
-    // Modo manual
-    manualMode();
+  if (isAutonomousMode) {
+      autonomousMode();
+  } else {
+      manualMode();
   }
 
-  updateDisplay();
+  if ((isPausing || !isAutonomousMode) && millis() - displayMillis >= displayInterval) {
+    displayMillis = millis();
+    updateDisplay();
+  }
 
-  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) // VERIFICA SE O CARTÃO PRESENTE NO LEITOR É DIFERENTE DO ÚLTIMO CARTÃO LIDO. CASO NÃO SEJA, FAZ
-    return;                                                         // RETORNA PARA LER NOVAMENTE
-  tagIdentified();
+  // Verifica a tag apenas a cada 500ms para não travar o loop
+  if (millis() - lastRFIDCheck >= RFID_INTERVAL) {
+    lastRFIDCheck = millis();
+    if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+        tagIdentified();
+    }}
 }
+
 
 void tagIdentified ()
 {
   tagFlag = 1;
-  String strID = "";
-  for (byte i = 0; i < 4; i++)
-  {
-    strID +=
-        (rfid.uid.uidByte[i] < 0x10 ? "0" : "") +
-        String(rfid.uid.uidByte[i], HEX) +
-        (i != 3 ? ":" : "");
-  }
-  strID.toUpperCase();
+  // String strID = "";
+  // for (byte i = 0; i < 4; i++)
+  // {
+  //   strID +=
+  //       (rfid.uid.uidByte[i] < 0x10 ? "0" : "") +
+  //       String(rfid.uid.uidByte[i], HEX) +
+  //       (i != 3 ? ":" : "");
+  // }
+  // strID.toUpperCase();
 
   rfid.PICC_HaltA();      // PARADA DA LEITURA DO CARTÃO
   rfid.PCD_StopCrypto1(); // PARADA DA CRIPTOGRAFIA NO PCD
@@ -174,37 +174,43 @@ void tagIdentified ()
   delay (500) ;
   digitalWrite (BUZZER_PIN, HIGH) ;
   delay (500) ;
+  left_motor.run(RELEASE);
+  right_motor.run(RELEASE);
 }
 
 void updateDisplay()
 {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  float ultrassom_read = ultrasonic.read(CM); // Substitua pela leitura real do sensor de ultrassom
-
-  display.clearDisplay(); // Garante que o display esteja limpo
-
-  // Definir tamanho da fonte
+  display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
 
-  // Exibir todas as informações na tela ao mesmo tempo
+  // Atualiza a temperatura e umidade apenas a cada 5 segundos
+  static unsigned long lastDHTRead = 0;
+  static float lastTemp = 0;
+  static float lastHum = 0;
+  // if (millis() - lastDHTRead >= 5000) {
+  //   lastDHTRead = millis();
+  //   lastTemp = dht.readTemperature();
+  //   lastHum = dht.readHumidity();
+  // }
+
   display.setCursor(0, 0);
   display.print("Temp: ");
-  display.print(t);
+  display.print(lastTemp);
   display.print(" C");
 
   display.setCursor(0, 10);
   display.print("Umid: ");
-  display.print(h);
+  display.print(lastHum);
   display.print(" %");
 
+  // Atualiza a distância sempre
+  unsigned int d = ultrasonic.read(CM);
   display.setCursor(0, 20);
   display.print("Dist: ");
-  display.print(ultrassom_read);
+  display.print(d);
   display.print(" cm");
 
-  // Atualizar o display
   display.display();
 }
 
@@ -212,158 +218,163 @@ void autonomousMode()
 {
   unsigned int ultrassom_read = ultrasonic.read(CM);
 
-    if (ultrassom_read < 45 && ultrassom_read > 5) {
-        if(last_ultrassom_read >= 45)
-        {
-            left_motor.setSpeed(MAX_SPEED);
-            left_motor.run(FORWARD);
-            right_motor.setSpeed(MAX_SPEED);           
-            right_motor.run(FORWARD);
-            delay(5);
-        }
-        left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
-        left_motor.run(FORWARD);
-        right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
-        right_motor.run(FORWARD);
-        isTurning = false;
-        turnComplete = false;
-        isMovingForward = false;
-    } else if (ultrassom_read <= 5) {
-        left_motor.run(RELEASE);
-        right_motor.run(RELEASE);
-        isTurning = false;
-        isMovingForward = false;
-        isPausing = false;
-    } else {
-        if (!isTurning && !isMovingForward) {
-            isMovingForward = true;
-            turnComplete = false;
-            isTurning = false;
-            previousMillis = millis();
-        }
+  if (ultrassom_read < 45 && ultrassom_read > 5) {
+      if(last_ultrassom_read >= 45)
+      {
+          left_motor.setSpeed(MAX_SPEED);
+          left_motor.run(FORWARD);
+          right_motor.setSpeed(MAX_SPEED);           
+          right_motor.run(FORWARD);
+          delay(5);
+      }
+      left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
+      left_motor.run(FORWARD);
+      right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
+      right_motor.run(FORWARD);
+      isTurning = false;
+      turnComplete = false;
+      isMovingForward = false;
+  } else if (ultrassom_read <= 5) {
+      left_motor.run(RELEASE);
+      right_motor.run(RELEASE);
+      isTurning = false;
+      isMovingForward = false;
+      isPausing = false;
+  } else {
+      if (!isTurning && !isMovingForward) {
+          isMovingForward = true;
+          turnComplete = false;
+          isTurning = false;
+          previousMillis = millis();
+      }
 
-        if (isTurning && !turnComplete) {
-            if (millis() - previousMillis >= turnInterval) {
-                isTurning = false;
-                turnComplete = true;
-                isMovingForward = true;
-                left_motor.run(RELEASE);
-                right_motor.run(RELEASE);
-                delay(1000);
-                left_motor.setSpeed(MAX_SPEED);
-                left_motor.run(FORWARD);
-                right_motor.setSpeed(MAX_SPEED);                
-                right_motor.run(FORWARD);
-                delay(5);
-                previousMillis = millis();
-            }
-            else if (millis() - turningMillis >= pauseInterval) {
-                if (isPausing) {
-                    left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
-                    left_motor.run(FORWARD);
-                    right_motor.setSpeed(TURN_RIGHT_SPEED_AUTO);
-                    right_motor.run(BACKWARD);
-                } else {
-                    left_motor.run(RELEASE);
-                    right_motor.run(RELEASE);
-                }
-                isPausing = !isPausing;
-                turningMillis = millis();
-            }
-            
-        }
+      if (isTurning && !turnComplete) {
+          if (millis() - previousMillis >= turnInterval) {
+              isTurning = false;
+              turnComplete = true;
+              isMovingForward = true;
+              left_motor.run(RELEASE);
+              right_motor.run(RELEASE);
+              delay(1000);
+              left_motor.setSpeed(MAX_SPEED);
+              left_motor.run(FORWARD);
+              right_motor.setSpeed(MAX_SPEED);                
+              right_motor.run(FORWARD);
+              delay(5);
+              previousMillis = millis();
+          }
+          else if (millis() - turningMillis >= pauseInterval) {
+              if (isPausing) {
+                  left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
+                  left_motor.run(FORWARD);
+                  right_motor.setSpeed(TURN_RIGHT_SPEED_AUTO);
+                  right_motor.run(BACKWARD);
+              } else {
+                  left_motor.run(RELEASE);
+                  right_motor.run(RELEASE);
+              }
+              isPausing = !isPausing;
+              turningMillis = millis();
+          }
+          
+      }
 
-        if (isMovingForward) {
-            if (millis() - previousMillis < moveForwardInterval) {
-                left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
-                left_motor.run(FORWARD);
-                right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);                
-                right_motor.run(FORWARD);
-            } else {
-                isMovingForward = false;
-                isTurning = true;
-                turnComplete = false;
-                left_motor.run(RELEASE);
-                right_motor.run(RELEASE);
-                delay(1000);
-                previousMillis = millis();
-                turningMillis = millis();
-            }
-        }
-    }
-    last_ultrassom_read = ultrassom_read;
+      if (isMovingForward) {
+          if (millis() - previousMillis < moveForwardInterval) {
+              left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
+              left_motor.run(FORWARD);
+              right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);                
+              right_motor.run(FORWARD);
+          } else {
+              isMovingForward = false;
+              isTurning = true;
+              turnComplete = false;
+              left_motor.run(RELEASE);
+              right_motor.run(RELEASE);
+              delay(1000);
+              previousMillis = millis();
+              turningMillis = millis();
+          }
+      }
+  }
+  last_ultrassom_read = ultrassom_read;
 }
 
 void manualMode()
 {
-  if (Serial.available())
-  {
+  if(Serial.available()){
     t = Serial.read();
     Serial.println(t);
-  }
-  switch (t)
-  {
-  case 'F':
-    goForward();
-    break;
-  case 'L':
-    turnLeft();
-    break;
-  case 'B':
-    goBack();
-    break;
-  case 'R':
-    turnRight();
-    break;
-  case 'S':
-    stops();
-    break;
-  case 'M':
-    turnOnLed();
-    break;
-  case 'm':
-    turnOffLed();
-    break;
-  default:
-    break;
-  }  
-  delay(300);
+
+ }
+     switch (t) {
+      case 'F': goForward(); break;
+        case 'L': turnLeft(); break;
+        case 'B': goBack(); break;
+        case 'R': turnRight(); break;
+        case 'S': stops(); break; 
+        case 'M': turnOnLed(); break;
+        case 'm': turnOffLed(); break; 
+        default: break;
+    }
+  delay(100);  // Espera 1 segundo antes de nova leitura
+
 }
+
 
 void goForward()
 {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(FORWARD);
+  right_motor.run(FORWARD);
+  delay(5);
   left_motor.setSpeed(FRONT_LEFT_SPEED);
-  right_motor.setSpeed(FRONT_RIGHT_SPEED);
+	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(FORWARD);
   right_motor.run(FORWARD);
 }
 
-void turnLeft()
-{
-  left_motor.setSpeed(TURN_LEFT_SPEED);
-  right_motor.setSpeed(TURN_RIGHT_SPEED);
+void turnLeft() {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
   left_motor.run(BACKWARD);
   right_motor.run(FORWARD);
+  delay(7);
+  left_motor.setSpeed(TURN_LEFT_SPEED);
+	right_motor.setSpeed(TURN_RIGHT_SPEED);
+  left_motor.run(BACKWARD);
+  right_motor.run(FORWARD);
+
 }
 
-void goBack()
-{
+void goBack() {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(BACKWARD);
+  right_motor.run(BACKWARD);
+  delay(5);
   left_motor.setSpeed(FRONT_LEFT_SPEED);
-  right_motor.setSpeed(FRONT_RIGHT_SPEED);
+	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(BACKWARD);
   right_motor.run(BACKWARD);
 }
 
-void turnRight()
-{
-  left_motor.setSpeed(TURN_LEFT_SPEED);
-  right_motor.setSpeed(TURN_RIGHT_SPEED);
+void turnRight() {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
   left_motor.run(FORWARD);
   right_motor.run(BACKWARD);
+  delay(7);
+  left_motor.setSpeed(TURN_LEFT_SPEED);
+	right_motor.setSpeed(TURN_RIGHT_SPEED);
+  left_motor.run(FORWARD);
+  right_motor.run(BACKWARD);
+
 }
 
-void stops()
-{
+void stops(){  
+
   left_motor.run(RELEASE);
   right_motor.run(RELEASE);
 }

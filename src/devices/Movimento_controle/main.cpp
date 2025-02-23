@@ -12,7 +12,7 @@
 #define FRONT_RIGHT_SPEED 80 
 #define TURN_LEFT_SPEED 70
 #define TURN_RIGHT_SPEED 70 
-
+#define MAX_SPEED 255
 /*
 ------------------  
 |  HC-SR04 (1)   |   
@@ -87,7 +87,7 @@ void loop() {
   Serial.println(d);
   Serial.print("T");
   Serial.println(temperatura);
-  delay(300);  // Espera 1 segundo antes de nova leitura
+  delay(100);  // Espera 1 segundo antes de nova leitura
 
 }
 void turnOnLed() {
@@ -100,6 +100,11 @@ void turnOffLed() {
 
 void goForward()
 {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(FORWARD);
+  right_motor.run(FORWARD);
+  delay(5);
   left_motor.setSpeed(FRONT_LEFT_SPEED);
 	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(FORWARD);
@@ -107,6 +112,11 @@ void goForward()
 }
 
 void turnLeft() {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(BACKWARD);
+  right_motor.run(FORWARD);
+  delay(5);
   left_motor.setSpeed(TURN_LEFT_SPEED);
 	right_motor.setSpeed(TURN_RIGHT_SPEED);
   left_motor.run(BACKWARD);
@@ -115,6 +125,11 @@ void turnLeft() {
 }
 
 void goBack() {
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(BACKWARD);
+  right_motor.run(BACKWARD);
+  delay(5);
   left_motor.setSpeed(FRONT_LEFT_SPEED);
 	right_motor.setSpeed(FRONT_RIGHT_SPEED);
   left_motor.run(BACKWARD);
@@ -122,7 +137,11 @@ void goBack() {
 }
 
 void turnRight() {
-
+  left_motor.setSpeed(MAX_SPEED);
+	right_motor.setSpeed(MAX_SPEED);
+  left_motor.run(FORWARD);
+  right_motor.run(BACKWARD);
+  delay(5);
   left_motor.setSpeed(TURN_LEFT_SPEED);
 	right_motor.setSpeed(TURN_RIGHT_SPEED);
   left_motor.run(FORWARD);
