@@ -206,7 +206,7 @@ void autonomousMode()
 {
     unsigned int ultrassom_read = ultrasonic.read(CM);
 
-    if (ultrassom_read < 45 && ultrassom_read > 5) {
+    if (ultrassom_read < 45 && ultrassom_read > 10) {
         if (last_ultrassom_read >= 45) {
             left_motor.setSpeed(MAX_SPEED);            
             right_motor.setSpeed(MAX_SPEED);
@@ -221,7 +221,15 @@ void autonomousMode()
         isTurning = false;
         turnComplete = false;
         isMovingForward = false;
-    } else if (ultrassom_read <= 5) {
+    } 
+    else if (ultrassom_read > 5 && ultrassom_read <= 10)
+    {
+        gradualSpeedChange(left_motor, 10);       
+        gradualSpeedChange(right_motor, 10);
+        left_motor.run(FORWARD);
+        right_motor.run(FORWARD);
+    }
+    else if (ultrassom_read <= 5) {
         left_motor.run(RELEASE);
         right_motor.run(RELEASE);
         isTurning = false;
