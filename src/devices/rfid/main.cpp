@@ -6,7 +6,7 @@
 #define RST_PIN A2 //PINO DE RESET
  
 MFRC522 rfid(SS_PIN, RST_PIN); //PASSAGEM DE PARÂMETROS REFERENTE AOS PINOS
-int buzzer = 5;
+int buzzer = A0;
 void setup() {
   Serial.begin(9600); //INICIALIZA A SERIAL
   SPI.begin(); //INICIALIZA O BARRAMENTO SPI

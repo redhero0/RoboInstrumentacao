@@ -1,5 +1,5 @@
 #include <Arduino.h>
-int pinoSensor = A1; 
+int pinoSensor = A3; 
    
 void setup(){  
   Serial.begin(9600);
