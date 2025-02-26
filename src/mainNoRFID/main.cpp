@@ -24,8 +24,25 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 
 #define FRONT_LEFT_SPEED_AUTO 70
 #define FRONT_RIGHT_SPEED_AUTO 70
-#define TURN_LEFT_SPEED_AUTO 88
-#define TURN_RIGHT_SPEED_AUTO 88
+#define TURN_LEFT_SPEED_AUTO 80
+#define TURN_RIGHT_SPEED_AUTO 80
+#define MAX_SPEED 255
+
+#define ECHO 2
+#define TRIG 3
+
+
+unsigned int last_ultrassom_read = 0;
+unsigned long previousMillis = 0;
+unsigned long turningMillis = 0;
+const long moveForwardInterval = 500;
+const long turnInterval = 3000;
+const long pauseInterval = 150;
+
+bool isTurning = false;
+bool isMovingForward = false;
+bool isPausing = false;
+bool turnComplete = false;
 
 #define MAX_SPEED 255
 
@@ -55,22 +72,7 @@ char t;
 
 bool isAutonomousMode = false; // Indica se está no modo autônomo ou manual
 
-unsigned long previousMillis = 0;
-unsigned long backMillis = 0;
-unsigned long turningMillis = 0;
-const long moveForwardInterval = 5;
-const long turnInterval = 5000;
-const long turnInterval_noSee = 800;
-const long pauseInterval = 100;
-
-bool isTurning = false;
-bool isMovingForward = false;
-bool isPausing = false;
-bool isTurningBack = false;
-bool lastIsTurningBack = false;
-bool turnComplete = false;
-
-unsigned int last_ultrassom_read = 0;
+int flagBuzzer = 0;
 
 int tagFlag = 0;
 
@@ -134,17 +136,7 @@ void loop()
 
   if (isAutonomousMode)
   {
-    if(tagFlag)
-    {
-      left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
-      left_motor.run(BACKWARD);
-      right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
-      right_motor.run(BACKWARD); 
-    }
-    else
-    {
-      autonomousMode();
-    }
+    autonomousMode();
   }
   else
   {
@@ -156,10 +148,6 @@ void loop()
     displayMillis = millis();
     updateDisplay();
   }
-
-  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) // VERIFICA SE O CARTÃO PRESENTE NO LEITOR É DIFERENTE DO ÚLTIMO CARTÃO LIDO. CASO NÃO SEJA, FAZ
-    return;                                                         // RETORNA PARA LER NOVAMENTE
-  tagIdentified();
 }
 
 void tagIdentified()
@@ -221,103 +209,50 @@ void updateDisplay()
 void autonomousMode()
 {
   unsigned int ultrassom_read = ultrasonic.read(CM);
-
-  if (ultrassom_read < 70 && ultrassom_read > 10)
+  if (ultrassom_read < 45 && ultrassom_read > 10)
   {
-    if (last_ultrassom_read >= 70)
+    if (last_ultrassom_read >= 45)
     {
-      left_motor.setSpeed(MAX_SPEED);
-      left_motor.run(FORWARD);
-      delay(7);
-      right_motor.setSpeed(MAX_SPEED);
-      right_motor.run(FORWARD);
-      delay(7);
-    }
-    left_motor.setSpeed(60);
-    left_motor.run(FORWARD);
-    delay(5);
-    right_motor.setSpeed(60);
-    right_motor.run(FORWARD);
-    isTurning = false;
-    turnComplete = false;
-    isMovingForward = false;
-    isTurningBack = false;
-    // lastIsTurningBack = isTurningBack;
-  }
-  else if (ultrassom_read <= 10 && tagFlag == 1)
-  {
-    // Para os motores se a tag foi lida e o obstáculo está próximo
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-    left_motor.run(RELEASE);
-    right_motor.run(RELEASE);
-    isTurning = false;
-    isMovingForward = false;
-    isPausing = false;
-    isTurningBack = false;
-    // lastIsTurningBack = isTurningBack;
-  }
-  else if (ultrassom_read <= 10 && tagFlag == 0)
-  {
-    // Motor vai para trás
-    if (!isTurningBack)
-    { 
-      isTurningBack = true;
-      left_motor.setSpeed(MAX_SPEED);
-      right_motor.setSpeed(MAX_SPEED);
-      left_motor.run(BACKWARD);
-      right_motor.run(BACKWARD);
-      delay(50);
-      backMillis = millis(); // Inicia o contador para a ré
-      turningMillis = millis();
-    }
-  }
-  else if (isTurningBack)
-  {
-    if (millis() - backMillis >= turnInterval_noSee)
-    {
-      isTurningBack = false;
-      isMovingForward = true;
-      left_motor.run(RELEASE);
-      right_motor.run(RELEASE);
-      delay(1000);
       left_motor.setSpeed(MAX_SPEED);
       left_motor.run(FORWARD);
       right_motor.setSpeed(MAX_SPEED);
       right_motor.run(FORWARD);
       delay(5);
-      previousMillis = millis();
     }
-    else if (millis() - turningMillis >= pauseInterval)
-    {
-      if (isPausing)
-      {
-        left_motor.setSpeed(TURN_LEFT_SPEED_AUTO);
-        left_motor.run(FORWARD);
-        right_motor.setSpeed(TURN_RIGHT_SPEED_AUTO);
-        right_motor.run(BACKWARD);
-      }
-      else
-      {
-        left_motor.run(RELEASE);
-        right_motor.run(RELEASE);
-      }
-      isPausing = !isPausing;
-      turningMillis = millis();
-    }
+    left_motor.setSpeed(FRONT_LEFT_SPEED_AUTO);
+    left_motor.run(FORWARD);
+    right_motor.setSpeed(FRONT_RIGHT_SPEED_AUTO);
+    right_motor.run(FORWARD);
+    isTurning = false;
+    turnComplete = false;
+    isMovingForward = false;
   }
-
+  else if (ultrassom_read <= 10)
+  {
+    left_motor.setSpeed(0);
+    right_motor.setSpeed(0);
+    left_motor.run(RELEASE);
+    right_motor.run(RELEASE);
+    if(!flagBuzzer)
+    {
+      digitalWrite(BUZZER_PIN, LOW);
+      delay(500);
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(500);
+      flagBuzzer = 1;
+    }
+    isTurning = false;
+    isMovingForward = false;
+    isPausing = false;
+  }
   else
   {
-    
     if (!isTurning && !isMovingForward)
     {
       isMovingForward = true;
       turnComplete = false;
       isTurning = false;
       previousMillis = millis();
-      isTurningBack = false;
-      // lastIsTurningBack = isTurningBack;
     }
 
     if (isTurning && !turnComplete)
@@ -332,10 +267,9 @@ void autonomousMode()
         delay(1000);
         left_motor.setSpeed(MAX_SPEED);
         left_motor.run(FORWARD);
-        delay(5);
         right_motor.setSpeed(MAX_SPEED);
         right_motor.run(FORWARD);
-        delay(5);
+        delay(2);
         previousMillis = millis();
       }
       else if (millis() - turningMillis >= pauseInterval)
